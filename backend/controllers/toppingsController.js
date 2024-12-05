@@ -10,25 +10,32 @@ const getAllToppings = async (req, res) => {
   }
 };
 
-// Create a new topping
-const createTopping = async (req, res) => {
-  const { name } = req.body;
-
-  try {
-    // Check if the topping already exists (case-insensitive)
-    const result = await pool.query("SELECT * FROM toppings WHERE LOWER(name) = LOWER($1)", [name]);
-    if (result.rowCount > 0) {
-      return res.status(400).json({ error: "Topping already exists." });
+const capitalizeName = (name) => {
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+  
+  const createTopping = async (req, res) => {
+    let { name } = req.body;
+  
+    try {
+      // Capitalize the topping name
+      name = capitalizeName(name);
+  
+      // Check if the topping already exists (case-insensitive)
+      const result = await pool.query("SELECT * FROM toppings WHERE LOWER(name) = LOWER($1)", [name]);
+      if (result.rowCount > 0) {
+        return res.status(400).json({ error: "Topping already exists." });
+      }
+  
+      // Insert the new topping
+      const newTopping = await pool.query("INSERT INTO toppings (name) VALUES ($1) RETURNING *", [name]);
+      res.status(201).json(newTopping.rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Failed to create topping." });
     }
-
-    // Insert the new topping
-    const newTopping = await pool.query("INSERT INTO toppings (name) VALUES ($1) RETURNING *", [name]);
-    res.status(201).json(newTopping.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create topping." });
-  }
-};
+  };
+  
 
 // Update an existing topping
 const updateTopping = async (req, res) => {

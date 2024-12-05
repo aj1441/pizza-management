@@ -4,11 +4,13 @@ const pool = require("../database/db");
 const getAllPizzas = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT p.id, p.name, ARRAY_AGG(t.name) AS toppings
-       FROM pizzas p
-       LEFT JOIN pizza_toppings pt ON p.id = pt.pizza_id
-       LEFT JOIN toppings t ON pt.topping_id = t.id
-       GROUP BY p.id`
+      `SELECT p.id, p.name, 
+  COALESCE(JSON_AGG(t.name ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL), '[]') AS toppings
+FROM pizzas p
+LEFT JOIN pizza_toppings pt ON p.id = pt.pizza_id
+LEFT JOIN toppings t ON pt.topping_id = t.id
+GROUP BY p.id;
+`
     );
     res.json(result.rows);
   } catch (err) {
@@ -16,11 +18,17 @@ const getAllPizzas = async (req, res) => {
   }
 };
 
-// Create a new pizza
-const createPizza = async (req, res) => {
-    const { name, toppings } = req.body;
+const capitalizeName = (name) => {
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+  
+  const createPizza = async (req, res) => {
+    let { name, toppings } = req.body;
   
     try {
+      // Capitalize the pizza name
+      name = capitalizeName(name);
+  
       // Fetch all pizzas with their toppings
       const result = await pool.query(`
         SELECT p.id, ARRAY_AGG(pt.topping_id ORDER BY pt.topping_id) AS toppings
@@ -32,7 +40,7 @@ const createPizza = async (req, res) => {
       const existingPizzas = result.rows;
   
       // Sort and compare toppings to ensure uniqueness
-      const sortedToppings = toppings.sort((a, b) => a - b);
+      const sortedToppings = (toppings || []).sort((a, b) => a - b);
       const isDuplicate = existingPizzas.some((pizza) =>
         JSON.stringify(pizza.toppings) === JSON.stringify(sortedToppings)
       );
@@ -52,12 +60,26 @@ const createPizza = async (req, res) => {
         await Promise.all(insertPromises);
       }
   
-      res.status(201).json(pizzaResult.rows[0]);
+      // Fetch the newly created pizza with toppings
+      const newPizza = await pool.query(`
+        SELECT p.id, p.name, 
+          COALESCE(JSON_AGG(t.name ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL), '[]') AS toppings
+        FROM pizzas p
+        LEFT JOIN pizza_toppings pt ON p.id = pt.pizza_id
+        LEFT JOIN toppings t ON pt.topping_id = t.id
+        WHERE p.id = $1
+        GROUP BY p.id
+      `, [pizzaResult.rows[0].id]);
+  
+      res.status(201).json(newPizza.rows[0]);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "Failed to create pizza." });
     }
   };
+  
+  
+  
   
   
 

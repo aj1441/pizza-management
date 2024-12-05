@@ -24,39 +24,51 @@ const PizzasList = () => {
         fetchData();
     }, []);
 
-    // Add a new pizza
-    const addPizza = async () => {
+    const capitalizeName = (name) => {
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      };
+      
+      const addPizza = async () => {
         if (!newPizza) {
-            setError("Pizza name cannot be empty.");
-            return;
+          setError("Pizza name cannot be empty.");
+          return;
         }
-
-        // Sort toppings to ensure consistent comparison
-        const sortedSelectedToppings = [...selectedToppings].sort((a, b) => a - b);
-
-        // Check for duplicate ingredients
+      
+        // Capitalize the pizza name
+        const formattedName = capitalizeName(newPizza);
+      
+        // Sort selected toppings to ensure consistent comparison
+        const sortedSelectedToppings = [...selectedToppings].sort();
+      
         if (
-            pizzas.some(
-                (pizza) =>
-                    JSON.stringify(pizza.toppings.map((t) => t.id).sort((a, b) => a - b)) ===
-                    JSON.stringify(sortedSelectedToppings)
-            )
+          pizzas.some(
+            (pizza) =>
+              JSON.stringify(pizza.toppings.sort()) ===
+              JSON.stringify(sortedSelectedToppings)
+          )
         ) {
-            setError("A pizza with the same ingredients already exists.");
-            return;
+          setError("A pizza with the same ingredients already exists.");
+          return;
         }
-
+      
         try {
-            const response = await api.post("/pizzas", { name: newPizza, toppings: selectedToppings });
-            setPizzas([...pizzas, response.data]);
-            setNewPizza("");
-            setSelectedToppings([]);
-            setError("");
+          await api.post("/pizzas", { name: formattedName, toppings: selectedToppings });
+      
+          // Refetch the updated list of pizzas
+          const pizzasResponse = await api.get("/pizzas");
+          setPizzas(pizzasResponse.data);
+      
+          setNewPizza("");
+          setSelectedToppings([]);
+          setError("");
         } catch (err) {
-            console.error("Error adding pizza:", err);
-            setError("Could not add pizza. It may already exist.");
+          console.error("Error adding pizza:", err);
+          setError("Could not add pizza. It may already exist.");
         }
-    };
+      };
+      
+      
+    
 
 
 // Delete a pizza
@@ -82,13 +94,20 @@ return (
     <div>
         <h2>Manage Pizzas</h2>
         <ul>
-            {pizzas.map((pizza) => (
-                <li key={pizza.id}>
-                    {pizza.name} - Toppings: {pizza.toppings.join(", ")}
-                    <button onClick={() => deletePizza(pizza.id)}>Delete</button>
-                </li>
-            ))}
-        </ul>
+  {pizzas.map((pizza) => (
+    <li key={pizza.id}>
+      {pizza.name} - Toppings: {Array.isArray(pizza.toppings) && pizza.toppings.length > 0 
+        ? pizza.toppings.map((topping, index) => (
+            <span key={index}>
+              {topping}{index < pizza.toppings.length - 1 ? ", " : ""}
+            </span>
+          ))
+        : "No toppings"}
+      <button onClick={() => deletePizza(pizza.id)}>Delete</button>
+    </li>
+  ))}
+</ul>
+
         <div>
             <input
                 type="text"
@@ -101,7 +120,7 @@ return (
                     <label key={topping.id}>
                         <input
                             type="checkbox"
-                            value={topping.id}
+                            value={topping}
                             onChange={() => toggleTopping(topping.id)}
                             checked={selectedToppings.includes(topping.id)}
                         />
