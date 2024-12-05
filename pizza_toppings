@@ -1,0 +1,6 @@
+\i /path/to/your/init.sql
+\i /Users/aj/Documents/Dev/pizza-management/backend/database/init.sql
+\dt
+\d toppings
+\d pizzas
+\s pizza_toppings
