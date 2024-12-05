@@ -5,6 +5,9 @@ const ToppingsList = () => {
   const [toppings, setToppings] = useState([]);
   const [newTopping, setNewTopping] = useState("");
   const [error, setError] = useState("");
+  const [editToppingId, setEditToppingId] = useState(null);
+const [editToppingName, setEditToppingName] = useState("");
+
 
   // Fetch toppings on component mount
   useEffect(() => {
@@ -44,6 +47,38 @@ const ToppingsList = () => {
     }
   };
 
+  //edit a topping
+  const handleEdit = (id, currentName) => {
+    setEditToppingId(id);
+    setEditToppingName(currentName);
+  };
+  
+  const saveEdit = async () => {
+    if (!editToppingName) {
+      setError("Topping name cannot be empty.");
+      return;
+    }
+  
+    try {
+      const response = await api.put(`/toppings/${editToppingId}`, { name: editToppingName });
+      setToppings(toppings.map((topping) =>
+        topping.id === editToppingId ? response.data : topping
+      ));
+      setEditToppingId(null);
+      setEditToppingName("");
+      setError("");
+    } catch (err) {
+      console.error("Error updating topping:", err);
+      setError("Failed to update topping. It may already exist.");
+    }
+  };
+  const cancelEdit = () => {
+    setEditToppingId(null);
+    setEditToppingName("");
+    setError("");
+  };
+  
+
   // Delete a topping
   const deleteTopping = async (id) => {
     try {
@@ -57,14 +92,32 @@ const ToppingsList = () => {
   return (
     <div>
       <h2>Manage Toppings</h2>
+
       <ul>
-        {toppings.map((topping) => (
-          <li key={topping.id}>
-            {topping.name}
-            <button onClick={() => deleteTopping(topping.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+  {toppings.map((topping) => (
+    <li key={topping.id}>
+      {editToppingId === topping.id ? (
+        <div>
+          <input
+            type="text"
+            value={editToppingName}
+            onChange={(e) => setEditToppingName(e.target.value)}
+            placeholder="Edit topping name"
+          />
+          <button onClick={saveEdit}>Save</button>
+          <button onClick={cancelEdit}>Cancel</button>
+        </div>
+      ) : (
+        <div>
+          {topping.name}
+          <button onClick={() => handleEdit(topping.id, topping.name)}>Edit</button>
+          <button onClick={() => deleteTopping(topping.id)}>Delete</button>
+        </div>
+      )}
+    </li>
+  ))}
+</ul>
+
       <div>
         <input
           type="text"

@@ -39,17 +39,38 @@ const capitalizeName = (name) => {
 
 // Update an existing topping
 const updateTopping = async (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
-
-  try {
-    const result = await pool.query("UPDATE toppings SET name = $1 WHERE id = $2 RETURNING *", [name, id]);
-    if (result.rowCount === 0) return res.status(404).json({ error: "Topping not found" });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(400).json({ error: "Failed to update topping" });
-  }
-};
+    const { id } = req.params; // Get the topping ID from the URL
+    let { name } = req.body; // Get the new topping name from the request body
+  
+    try {
+      // Capitalize the topping name for consistency
+      name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+      // Check if the new name already exists (case-insensitive)
+      const duplicateCheck = await pool.query("SELECT * FROM toppings WHERE LOWER(name) = LOWER($1) AND id != $2", [name, id]);
+      if (duplicateCheck.rowCount > 0) {
+        return res.status(400).json({ error: "A topping with this name already exists." });
+      }
+  
+      // Update the topping in the database
+      const result = await pool.query("UPDATE toppings SET name = $1 WHERE id = $2 RETURNING *", [name, id]);
+  
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Topping not found." });
+      }
+  
+      res.status(200).json(result.rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Failed to update topping." });
+    }
+  };
+  
+  module.exports = {
+    // Other functions
+    updateTopping,
+  };
+  
 
 // Delete a topping
 const deleteTopping = async (req, res) => {
