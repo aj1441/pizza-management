@@ -75,13 +75,37 @@ const updateTopping = async (req, res) => {
 // Delete a topping
 const deleteTopping = async (req, res) => {
   const { id } = req.params;
+  const { force } = req.query; // Capture the force parameter
 
   try {
+    // Find pizzas using this topping
+    const pizzasWithTopping = await pool.query(
+      `SELECT p.id, p.name 
+       FROM pizzas p
+       JOIN pizza_toppings pt ON p.id = pt.pizza_id
+       WHERE pt.topping_id = $1`,
+      [id]
+    );
+
+    if (pizzasWithTopping.rows.length > 0 && force !== "true") {
+      return res.status(400).json({
+        error: "This topping is used by existing pizzas.",
+        affectedPizzas: pizzasWithTopping.rows,
+      });
+    }
+
+    // If force=true or no pizzas are using the topping, delete it
+    await pool.query("DELETE FROM pizza_toppings WHERE topping_id = $1", [id]);
     const result = await pool.query("DELETE FROM toppings WHERE id = $1 RETURNING *", [id]);
-    if (result.rowCount === 0) return res.status(404).json({ error: "Topping not found" });
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Topping not found" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete topping" });
+    console.error("Error deleting topping:", err);
+    res.status(500).json({ error: "Failed to delete topping." });
   }
 };
 
