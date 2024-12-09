@@ -1,3 +1,4 @@
+// Import necessary components, dependencies and styles for the application
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from './pages/Home';
 import OwnerPage from "./pages/OwnerPage";
@@ -6,7 +7,9 @@ import "./App.css";
 import Logo from "./assets/pizza.png";
 
 
+// Define the main App component for the application layout
 const App = () => {
+// Render the application's main structure and components
   return (
     <Router>
       <header>

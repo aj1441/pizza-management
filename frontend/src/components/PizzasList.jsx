@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import api from "../api";
 
 const PizzasList = () => {
+    // Update the state variable with the fetched data
   const [pizzas, setPizzas] = useState([]);
   const [newPizza, setNewPizza] = useState("");
+    // Update the state variable with the fetched data
   const [toppings, setToppings] = useState([]);
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [error, setError] = useState("");
@@ -14,12 +16,17 @@ const PizzasList = () => {
   // Fetch pizzas and toppings on component mount
   useEffect(() => {
     const fetchData = async () => {
+  // Start a block to attempt the API request
       try {
         const pizzasResponse = await api.get("/pizzas");
         const toppingsResponse = await api.get("/toppings");
+    // Update the state variable with the fetched data
         setPizzas(pizzasResponse.data);
+    // Update the state variable with the fetched data
         setToppings(toppingsResponse.data);
+  // Catch and handle any errors that occur during the request
       } catch (err) {
+    // Log the error for debugging purposes
         console.error("Error fetching data:", err);
       }
     };
@@ -28,12 +35,14 @@ const PizzasList = () => {
   }, []);
 
   const capitalizeName = (name) => {
+// Render the PizzasList Component's output
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   };
 
   const addPizza = async () => {
     if (!newPizza) {
       setError("Pizza name cannot be empty.");
+// Render the PizzasList Component's output
       return;
     }
 
@@ -48,29 +57,38 @@ const PizzasList = () => {
       )
     ) {
       setError("A pizza with the same ingredients already exists.");
+// Render the PizzasList Component's output
       return;
     }
 
+  // Start a block to attempt the API request
     try {
       await api.post("/pizzas", { name: formattedName, toppings: selectedToppings });
 
       const pizzasResponse = await api.get("/pizzas");
+    // Update the state variable with the fetched data
       setPizzas(pizzasResponse.data);
 
       setNewPizza("");
       setSelectedToppings([]);
       setError("");
+  // Catch and handle any errors that occur during the request
     } catch (err) {
+    // Log the error for debugging purposes
       console.error("Error adding pizza:", err);
       setError("Could not add pizza. It may already exist.");
     }
   };
 
   const deletePizza = async (id) => {
+  // Start a block to attempt the API request
     try {
       await api.delete(`/pizzas/${id}`);
+    // Update the state variable with the fetched data
       setPizzas(pizzas.filter((pizza) => pizza.id !== id));
+  // Catch and handle any errors that occur during the request
     } catch (err) {
+    // Log the error for debugging purposes
       console.error("Error deleting pizza:", err);
     }
   };
@@ -90,6 +108,7 @@ const PizzasList = () => {
       pizza.toppings.map((topping) => {
         // Assuming toppings is an array of objects with `id` and `name`
         const toppingObj = toppings.find((t) => t.name === topping);
+// Render the PizzasList Component's output
         return toppingObj?.id; // Map to IDs
       }).filter(Boolean) // Filter out null/undefined
     );
@@ -106,11 +125,13 @@ const PizzasList = () => {
   const saveEdits = async () => {
     if (!editedName) {
       setError("Pizza name cannot be empty.");
+// Render the PizzasList Component's output
       return;
     }
   
     const formattedName = capitalizeName(editedName);
   
+  // Start a block to attempt the API request
     try {
       console.log("Saving edits with payload:", {
         name: formattedName,
@@ -123,13 +144,16 @@ const PizzasList = () => {
       });
   
       const pizzasResponse = await api.get("/pizzas");
+    // Update the state variable with the fetched data
       setPizzas(pizzasResponse.data);
   
       setEditingPizza(null);
       setEditedName("");
       setEditedToppings([]);
       setError("");
+  // Catch and handle any errors that occur during the request
     } catch (err) {
+    // Log the error for debugging purposes
       console.error("Error saving pizza edits:", err);
       setError("Could not save edits.");
     }
@@ -142,8 +166,9 @@ const PizzasList = () => {
     setEditedToppings([]);
   };
 
+// Render the PizzasList Component's output
   return (
-    <div>
+    <div className="main">
       <h2>Manage Pizzas</h2>
       <ul>
         {pizzas.map((pizza) => (

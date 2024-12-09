@@ -112,6 +112,10 @@ button:hover {
   color: var (var(--blackest));
   font-weight: bolder;
 }
+.main {
+  max-width: 70%;
+  margin: auto;
+}
 .toppings {
   font-size: 2rem;
 
